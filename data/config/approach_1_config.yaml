@@ -1,0 +1,40 @@
+# Configuration for Lane Detection Pipeline - Approach 1
+
+# Camera Calibration Settings
+camera_calibration:
+  calibration_file_path: "data/camera_calibration/calibrate_camera.p"
+  chessboard_size: [9, 6]  # (width, height) of chessboard pattern
+
+perspective_transform:
+  straight_lane:
+    src_points: [[450, 450], [900, 450], [1200, 700], [200, 700]]
+    dest_points: [[200, 0], [1000, 0], [1000, 720], [200, 720]]
+  curved_lane:
+    src_points: [[500, 475], [800, 475], [1100, 620], [250, 620]]
+    dest_points: [[200, 0], [1000, 0], [1000, 720], [200, 720]]
+  foggy_lane:
+    src_points: [[450, 475], [800, 475], [1100, 620], [250, 620]]
+    dest_points: [[200, 0], [1000, 0], [1000, 720], [200, 720]]
+  default:
+    src_points: [[450, 450], [900, 450], [1200, 700], [200, 700]]
+    dest_points: [[200, 0], [1000, 0], [1000, 720], [200, 720]]
+    
+image_preprocessing:
+  k_size_sobel_filter: 5
+  threshold_sobel_filter: 30
+  yellow_lower_bound: [0, 100, 100]
+  yellow_upper_bound: [210, 255, 255]
+  white_threshold: 200
+  white_maxval: 255
+  sobel_k_size: 5
+  sobel_threshold: 30
+
+# Processing Settings
+processing:
+  output_format: "mp4"  # or "avi", "png", etc.
+  fps: 30
+
+# Debug Settings
+debug:
+  show_intermediate_steps: false
+  save_intermediate_images: false
