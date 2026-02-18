@@ -2,34 +2,36 @@ import numpy as np
 import cv2
 
 class ImagePreProcessor:
-    def __init__(self, undisorted_image: np.ndarray, 
-                 k_size_sobel_filter=5, threshold_sobel_filter=30,
-                 yellow_lower_bound=None, yellow_upper_bound=None,
+    """Tiền xử lý ảnh: tạo các mask màu và cạnh để phát hiện làn đường"""
+
+    def __init__(self, undisorted_image: np.ndarray,
+                 yellow_lower_bound=(0, 100, 100), yellow_upper_bound=(210, 255, 255),
                  white_threshold=200, white_maxval=255,
                  sobel_k_size=5, sobel_threshold=30
         ):
-        
+        """Khởi tạo với ảnh đã khử méo và các tham số lọc màu, Sobel"""
         self.undisorted_image = undisorted_image
-        self.k_size_sobel_filter = k_size_sobel_filter
-        self.threshold_sobel_filter = threshold_sobel_filter
-        self.yellow_lower_bound = np.array(yellow_lower_bound if yellow_lower_bound else [0, 100, 100])
-        self.yellow_upper_bound = np.array(yellow_upper_bound if yellow_upper_bound else [210, 255, 255])
-        self.white_threshold = white_threshold if white_threshold else 200
-        self.white_maxval = white_maxval if white_maxval else 255
+        self.yellow_lower_bound = np.array(yellow_lower_bound)
+        self.yellow_upper_bound = np.array(yellow_upper_bound)
+        self.white_threshold = white_threshold
+        self.white_maxval = white_maxval
         self.sobel_k_size = sobel_k_size
         self.sobel_threshold = sobel_threshold
 
     def create_yellow_color_mask(self):
+        """Tạo mask phát hiện làn vàng từ không gian màu HSV"""
         hsv_image = cv2.cvtColor(self.undisorted_image, cv2.COLOR_BGR2HSV)
         yellow_color_mask = cv2.inRange(hsv_image, self.yellow_lower_bound, self.yellow_upper_bound)
         return yellow_color_mask
     
     def create_white_color_mask(self):
+        """Tạo mask phát hiện làn trắng bằng ngưỡng grayscale"""
         gray_scale_image = cv2.cvtColor(self.undisorted_image, cv2.COLOR_BGR2GRAY)
         _, mask_white_threshold = cv2.threshold(gray_scale_image, self.white_threshold, self.white_maxval, cv2.THRESH_BINARY)
         return mask_white_threshold
 
     def create_sobel_edge_mask(self):
+        """Tạo mask phát hiện cạnh bằng bộ lọc Sobel"""
         gray_scale_image = cv2.cvtColor(self.undisorted_image, cv2.COLOR_BGR2GRAY)
 
         blurred = cv2.GaussianBlur(gray_scale_image, (self.sobel_k_size, self.sobel_k_size), 0)
@@ -45,6 +47,7 @@ class ImagePreProcessor:
 
 
     def preprocess_image(self):
+        """Kết hợp các mask (vàng, trắng, Sobel) thành mask cuối cùng"""
         yellow_color_mask = self.create_yellow_color_mask()
         white_color_mask = self.create_white_color_mask()
         sobel_edge_mask = self.create_sobel_edge_mask()
@@ -64,16 +67,11 @@ class ImagePreProcessor:
 
 
     @classmethod
-    def from_config(cls, config: dict):
+    def from_config(cls, image: np.ndarray, config: dict):
+        """Tạo instance ImagePreProcessor từ ảnh và dict config"""
         return cls(
-            k_size_sobel_filter = config.get('k_size_sobel_filter', 5),
-            threshold_sobel_filter = config.get('threshold_sobel_filter', 30),
-            yellow_lower_bound = config.get('yellow_lower_bound', [0, 100, 100]),
-            yellow_upper_bound = config.get('yellow_upper_bound', [210, 255, 255]),
-            white_threshold = config.get('white_threshold', 200),
-            white_maxval = config.get('white_maxval', 255),
-            sobel_k_size = config.get('sobel_k_size', 5),
-            sobel_threshold = config.get('sobel_threshold', 30),
+            undisorted_image=image,
+            **config
         )
         
     

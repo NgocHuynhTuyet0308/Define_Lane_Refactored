@@ -20,8 +20,6 @@ perspective_transform:
     dest_points: [[200, 0], [1000, 0], [1000, 720], [200, 720]]
     
 image_preprocessing:
-  k_size_sobel_filter: 5
-  threshold_sobel_filter: 30
   yellow_lower_bound: [0, 100, 100]
   yellow_upper_bound: [210, 255, 255]
   white_threshold: 200
@@ -29,12 +27,14 @@ image_preprocessing:
   sobel_k_size: 5
   sobel_threshold: 30
 
+# Lane Detection Settings (Sliding Window)
+lane_detection:
+  morphology_kernel_size: 11  # Kích thước kernel morphology close
+  nwindows: 100               # Số cửa sổ trượt
+  margin: 100                 # Độ rộng mỗi cửa sổ (pixels)
+  minpix: 50                  # Số pixel tối thiểu để dịch cửa sổ
+
 # Processing Settings
 processing:
   output_format: "mp4"  # or "avi", "png", etc.
   fps: 30
-
-# Debug Settings
-debug:
-  show_intermediate_steps: false
-  save_intermediate_images: false

@@ -2,20 +2,16 @@ import numpy as np
 
 
 class LaneDetector:
-    def __init__(self):
-        pass
+    """Phát hiện làn đường bằng sliding window và fit đường cong bậc 2"""
 
     @staticmethod
-    def fit_curve(image):
+    def fit_curve(image, nwindows=100, margin=100, minpix=50):
+        """Tìm đường cong bậc 2 (polyfit) cho làn trái và phải bằng sliding window"""
         histogram = np.sum(image, axis=0)
 
         midpoint = int(histogram.shape[0] / 2)
         leftx_base = np.argmax(histogram[:midpoint])
         rightx_base = np.argmax(histogram[midpoint:]) + midpoint
-
-        nwindows = 100
-        margin = 100
-        minpix = 50
         window_height = int(image.shape[0] / nwindows)
 
         y, x = image.nonzero()
@@ -67,6 +63,7 @@ class LaneDetector:
 
     @staticmethod
     def find_points(img_shape, left_fit, right_fit):
+        """Tính tọa độ các điểm trên đường cong làn trái và phải từ hệ số polyfit"""
         ploty = np.linspace(0, img_shape[0] - 1, img_shape[0])
         pts_left = None
         pts_right = None

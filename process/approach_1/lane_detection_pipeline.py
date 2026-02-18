@@ -8,15 +8,10 @@ from .lane_visualizer import LaneVisualizer
 
 
 class LaneDetectionPipeline:
-    """Pipeline for processing frames through all lane detection steps"""
+    """Pipeline phát hiện làn đường từ ảnh/video"""
 
     def __init__(self, config: dict):
-        """
-        Initialize pipeline with configuration
-
-        Args:
-            config: Dictionary containing all configuration parameters
-        """
+        """Khởi tạo pipeline: load calibrator và các tham số từ config"""
         self.config = config
 
         # Initialize camera calibrator
@@ -25,38 +20,23 @@ class LaneDetectionPipeline:
         # Store preprocessing config
         self.preprocessing_config = config.get('image_preprocessing', {})
 
+        # Store lane detection config
+        self.lane_detection_config = config.get('lane_detection', {})
+
         # Store perspective transform config
         pt_config = config.get('perspective_transform', {})
         video_type = config.get('video_type', 'straight_lane')
         self.perspective_config = pt_config.get(video_type, {})
 
     def process_frame(self, frame: np.ndarray) -> np.ndarray:
-        """
-        Process a single frame through the entire pipeline
-
-        Args:
-            frame: Input frame (BGR image)
-
-        Returns:
-            Processed frame
-        """
+        """Xử lý 1 frame qua toàn bộ pipeline: undistort, preprocess, perspective transform, detect lane và vẽ kết quả"""
         # Step 1: Undistort image
         undistorted = self.calibrator.undistort_image(frame)
 
         # Step 2: Apply image preprocessing (yellow lane detection)
-        preprocessor = ImagePreProcessor(
-            undisorted_image=undistorted,
-            k_size_sobel_filter=self.preprocessing_config.get('k_size_sobel_filter', 5),
-            threshold_sobel_filter=self.preprocessing_config.get('threshold_sobel_filter', 30),
-            yellow_lower_bound=self.preprocessing_config.get('yellow_lower_bound', [0, 100, 100]),
-            yellow_upper_bound=self.preprocessing_config.get('yellow_upper_bound', [210, 255, 255]),
-            white_threshold = self.preprocessing_config.get('white_threshold', 200),
-            white_maxval = self.preprocessing_config.get('white_maxval', 255),
-        )
+        preprocessor = ImagePreProcessor.from_config(undistorted, self.preprocessing_config)
         combined_mask = preprocessor.preprocess_image()
     
-
-        # TODO: Add more processing steps here
         # Step 3: Perspective transform
         perspective_transfomer = PerspectiveTransformer(
             image=combined_mask,
@@ -70,21 +50,47 @@ class LaneDetectionPipeline:
             perspective_transfomer.dest_points, perspective_transfomer.src_points
         )
 
+        # BEV of RGB image
+        rgb_transformer = PerspectiveTransformer(
+            image=undistorted,
+            src_points=perspective_transfomer.src_points,
+            dest_points=perspective_transfomer.dest_points
+        )
+        rgb_ROI = rgb_transformer.create_ROI()
+        rgb_transformer.image = rgb_ROI
+        wraped_rgb = rgb_transformer.change_perspective()
+
         # Step 4: Lane detection
-        kernel = np.ones((11, 11), np.uint8)
+        kernel_size = self.lane_detection_config.get('morphology_kernel_size', 11)
+        kernel = np.ones((kernel_size, kernel_size), np.uint8)
         bird_eye_image_morphology = cv2.morphologyEx(wraped_combined_mask, cv2.MORPH_CLOSE, kernel)
-        left_fit, right_fit = LaneDetector.fit_curve(bird_eye_image_morphology)
-        pts_left, pts_right = LaneDetector.find_points((960, 400), left_fit, right_fit)
+        left_fit, right_fit = LaneDetector.fit_curve(
+            bird_eye_image_morphology,
+            nwindows=self.lane_detection_config.get('nwindows', 100),
+            margin=self.lane_detection_config.get('margin', 100),
+            minpix=self.lane_detection_config.get('minpix', 50),
+        )
+        img_shape = wraped_combined_mask.shape[:2]
+        pts_left, pts_right = LaneDetector.find_points(img_shape, left_fit, right_fit)
 
         # Step 5: Draw lanes on original image
         mask_draw_image = LaneVisualizer.draw_curves(wraped_combined_mask, pts_left, pts_right)
         original_image = LaneVisualizer.overlay_on_original(
             undistorted, mask_draw_image, inverse_perspective_matrix
         )
+        roi_image = LaneVisualizer.draw_roi_points(undistorted, self.perspective_config['src_points'])
+    
+        # Concat roi_image and combined_mask_ROI
+        combined_mask_ROI_bgr = cv2.cvtColor(combined_mask_ROI, cv2.COLOR_GRAY2BGR)
+        roi_and_mask = cv2.hconcat([roi_image, combined_mask_ROI_bgr])
 
-        return original_image
+        # Concat BEV RGB and BEV mask
+        wraped_combined_mask_bgr = cv2.cvtColor(wraped_combined_mask, cv2.COLOR_GRAY2BGR)
+        bev_and_mask = cv2.hconcat([wraped_rgb, wraped_combined_mask_bgr])
 
+        return original_image, roi_and_mask, bev_and_mask
+    
     @classmethod
     def from_config(cls, config: dict):
-        """Create pipeline from configuration dictionary"""
+        """Tạo instance pipeline từ dict config"""
         return cls(config)

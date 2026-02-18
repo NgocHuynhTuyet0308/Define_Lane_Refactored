@@ -19,10 +19,10 @@
             "program": "${workspaceFolder}/test_approach_1.py",
             "console": "integratedTerminal",
             "args": [
-                "--input_path", "data\\video\\curved_lane.mp4",
-                "--output_path", "output\\output_curved_lane.mp4",
+                "--input_path", "data\\video\\straight_lane.mp4",
+                "--output_path", "output\\output_video",
                 "--config", "data\\config\\approach_1_config.yaml",
-                "--video_type", "curved_lane"
+                "--video_type", "straight_lane"
             ]
         }
     ]

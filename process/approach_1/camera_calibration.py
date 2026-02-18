@@ -12,14 +12,7 @@ class CameraCalibrator:
         chessboard_size: tuple = None,
         calibration_images_path: str = "camera_cal/*.jpg"
     ):
-        """
-        Initialize Camera Calibrator
-
-        Args:
-            calibration_file_path: Path to calibration pickle file
-            chessboard_size: Size of chessboard (optional, for future calibration)
-            calibration_images_path: Path pattern for calibration images (fallback)
-        """
+        """Khởi tạo Camera Calibrator: load tham số hiệu chỉnh từ file hoặc tính từ ảnh bàn cờ"""
         self.calibration_file_path = calibration_file_path
         self.chessboard_size = chessboard_size if chessboard_size else (9, 6)
         self.calibration_images_path = calibration_images_path
@@ -28,11 +21,7 @@ class CameraCalibrator:
         self._load_calibration()
 
     def _load_calibration(self):
-        """
-        Load calibration parameters from pickle file
-        TH1: Nếu như có file pickel tham số hiệu chỉnh từ bàn cờ thì lấy tham số từ đó
-        TH2: Nếu như không có file thì tạo tham số từ bộ ảnh
-        """
+        """Load tham số hiệu chỉnh từ file pickle, nếu không có thì tính từ bộ ảnh bàn cờ"""
         try:
             with open(self.calibration_file_path, "rb") as f:
                 dist_pickle = pickle.load(f)
@@ -51,15 +40,7 @@ class CameraCalibrator:
             raise Exception(f"Error loading calibration file: {str(e)}")
 
     def get_distortion_params(self, calibration_path):
-        """
-        Tính toán các tham số hiệu chỉnh camera từ ảnh bàn cờ
-
-        Args:
-            calibration_path: Path pattern for calibration images (e.g., "camera_cal/*.jpg")
-
-        Returns:
-            mtx, dist: Camera matrix and distortion coefficients
-        """
+        """Tính toán các tham số hiệu chỉnh camera (mtx, dist) từ bộ ảnh bàn cờ"""
         objp = np.zeros((self.chessboard_size[1] * self.chessboard_size[0], 3), np.float32)
         objp[:, :2] = np.mgrid[0:self.chessboard_size[0], 0:self.chessboard_size[1]].T.reshape(-1, 2)
 
@@ -90,15 +71,7 @@ class CameraCalibrator:
         return mtx, dist
 
     def undistort_image(self, image: np.ndarray) -> np.ndarray:
-        """
-        Undistort an image using loaded calibration parameters
-
-        Args:
-            image: Input distorted image
-
-        Returns:
-            Undistorted image
-        """
+        """Khử méo ảnh bằng tham số hiệu chỉnh đã load"""
         if self.mtx is None or self.dist is None:
             raise ValueError("Calibration parameters not loaded")
 
@@ -106,15 +79,7 @@ class CameraCalibrator:
 
     @classmethod
     def from_config(cls, config: dict):
-        """
-        Create CameraCalibrator from config dictionary
-
-        Args:
-            config: Dictionary containing calibration_file_path and chessboard_size
-
-        Returns:
-            CameraCalibrator instance
-        """
+        """Tạo instance CameraCalibrator từ dict config"""
         return cls(
             calibration_file_path=config.get('calibration_file_path'),
             chessboard_size=tuple(config.get('chessboard_size', [9, 6]))
