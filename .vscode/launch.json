@@ -20,9 +20,21 @@
             "console": "integratedTerminal",
             "args": [
                 "--input_path", "data\\video\\straight_lane.mp4",
-                "--output_path", "output\\output_video",
+                "--output_path", "output\\output_video_approach_1",
                 "--config", "data\\config\\approach_1_config.yaml",
                 "--video_type", "straight_lane"
+            ]
+        },
+        {
+            "name": "Approach_2",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/test_approach_2.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--input_path", "data\\video\\straight_lane.mp4",
+                "--output_path", "output\\output_video_approach_2",
+                "--config", "data\\config\\approach_2_config.yaml",
             ]
         }
     ]

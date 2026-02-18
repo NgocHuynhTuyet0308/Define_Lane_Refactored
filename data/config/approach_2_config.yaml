@@ -1,0 +1,4 @@
+model:
+  weight_path: "data\\model\\unet_model_256.h5"
+  image_size: [256, 256]
+  threshold: 0.9
