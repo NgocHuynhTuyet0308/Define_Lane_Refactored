@@ -2,7 +2,7 @@ import yaml
 import os
 import argparse
 import cv2
-from process.lane_segmentation_pipeline import LaneSegmentationPipeline
+from process.approach_2.lane_segmentation_pipeline import LaneSegmentationPipeline
 from tqdm import tqdm
 
 
